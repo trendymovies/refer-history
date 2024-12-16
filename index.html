@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referred Users</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #000, #444);
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .user-list {
+      max-width: 600px;
+      margin: 20px auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    .user {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: black;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(255, 0, 0, 0.2);
+    }
+    .user-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #ffc107;
+    }
+    .reg-time {
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Referred Users</h1>
+  <div id="userList" class="user-list">
+    <!-- Referred users will be listed here -->
+  </div>
+
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCBPGSYNVaPPDu7RWee9ymckMaI1VQNjd4",
+      authDomain: "trendy-movie.firebaseapp.com",
+      databaseURL: "https://trendy-movie-default-rtdb.firebaseio.com",
+      projectId: "trendy-movie",
+      storageBucket: "trendy-movie.firebasestorage.app",
+      messagingSenderId: "699469684359",
+      appId: "1:699469684359:web:34cc2adfc8019b89a76222",
+      measurementId: "G-54SX69JVY3"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Fetch User Details from Local Storage
+    const uid = localStorage.getItem('uid');
+    if (!uid) {
+      alert('No user logged in!');
+      window.location = '/login.html'; // Redirect to login if no user found.
+    }
+
+    // Fetch Referred Users
+    database.ref(users/${uid}).once('value').then(snapshot => {
+      const userData = snapshot.val();
+      if (userData) {
+        const referralCode = userData.referralCode;
+
+        // Fetch all users referred by the current user's referral code
+        database.ref('users').once('value').then(snapshot => {
+          const allUsers = snapshot.val();
+          const referredUsers = Object.values(allUsers || {}).filter(
+            user => user.referredBy === referralCode
+          );
+
+          const userListElement = document.getElementById('userList');
+          if (referredUsers.length === 0) {
+            userListElement.innerHTML = "<p>No users have used your referral code yet.</p>";
+            return;
+          }
+
+          // Display each referred user's name and registration time
+          referredUsers.forEach(user => {
+            const userElement = document.createElement('div');
+            userElement.classList.add('user');
+            userElement.innerHTML = `
+              <div class="user-name">${user.name || 'Anonymous'}</div>
+              <div class="reg-time">${new Date(user.registrationTime || Date.now()).toLocaleString()}</div>
+            `;
+            userListElement.appendChild(userElement);
+          });
+        });
+      } else {
+        alert('User not found in database!');
+      }
+    }).catch(error => {
+      console.error('Error fetching user data:', error);
+      alert('Failed to fetch data. Please try again.');
+    });
+  </script>
+</body>
+</html>
